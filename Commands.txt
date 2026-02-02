@@ -1,0 +1,28 @@
+wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+
+sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+-platforms-android - android.jar
+-platforms - adb
+-build-tools - appt2, d8
+
+--res Binar
+./aapt2 compile --dir /mnt/e/android_test/res -o /mnt/e/android_test/build/res/
+
+-pack into apk
+./aapt2 link -I $ANDROID_HOME/platforms/android-36/android.jar --manifest /mnt/e/android_test/AndroidManifest.xml --min-sdk-version 24 --target-sdk-version 36 --java /mnt/e/android_test/build /mnt/e/android_test/build/res/*.flat -o /mnt/e/android_test/build/app-unsigned.ap
+	
+--Java code
+javac -classpath $ANDROID_HOME/platforms/android-36/android.jar -d /mnt/e/android_test/build/classes /mnt/e/android_test/src/com/helloworld/MainActivity.java  /mnt/e/android_test/build/com/helloworld/R.java
+	
+d8 --lib $ANDROID_HOME/platforms/android-36/android.jar --output /mnt/e/android_test/build/dex/classes.zip /mnt/e/android_test/build/classes/com/helloworld/
+	
+--Combine
+zip -u /mnt/e/android_test/build/app-unsigned.apk /mnt/e/android_test/build/dex/classes.dex
+
+--Optimize
+zipalign -p 4 /mnt/e/android_test/build/apk/app-unsigned.apk /mnt/e/android_test/build/apk/app-aligned.apk
+
+--Sign
+keytool -genkeypair -keystore debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000
+
+apksigner sign --ks debug.keystore --ks-key-alias androiddebugkey --out /mnt/e/android_test/build/app.apk /mnt/e/android_test/build/app-aligned.apk
